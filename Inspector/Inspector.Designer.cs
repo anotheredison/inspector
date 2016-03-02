@@ -28,12 +28,15 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Inspector));
             this.label1 = new System.Windows.Forms.Label();
             this.tbInput = new System.Windows.Forms.TextBox();
             this.btnStart = new System.Windows.Forms.Button();
             this.label2 = new System.Windows.Forms.Label();
             this.tbOutput = new System.Windows.Forms.TextBox();
             this.logArea = new System.Windows.Forms.TextBox();
+            this.label3 = new System.Windows.Forms.Label();
+            this.tbMappingConf = new System.Windows.Forms.TextBox();
             this.SuspendLayout();
             // 
             // label1
@@ -61,7 +64,7 @@
             // btnStart
             // 
             this.btnStart.Font = new System.Drawing.Font("Consolas", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnStart.Location = new System.Drawing.Point(947, 95);
+            this.btnStart.Location = new System.Drawing.Point(950, 133);
             this.btnStart.Margin = new System.Windows.Forms.Padding(4);
             this.btnStart.Name = "btnStart";
             this.btnStart.Size = new System.Drawing.Size(88, 27);
@@ -94,19 +97,43 @@
             // 
             // logArea
             // 
-            this.logArea.Location = new System.Drawing.Point(18, 152);
+            this.logArea.Location = new System.Drawing.Point(18, 177);
             this.logArea.Multiline = true;
             this.logArea.Name = "logArea";
             this.logArea.ReadOnly = true;
             this.logArea.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.logArea.Size = new System.Drawing.Size(904, 417);
+            this.logArea.Size = new System.Drawing.Size(904, 392);
             this.logArea.TabIndex = 5;
+            // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Font = new System.Drawing.Font("Consolas", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label3.Location = new System.Drawing.Point(14, 141);
+            this.label3.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(162, 19);
+            this.label3.TabIndex = 6;
+            this.label3.Text = "Mapping Conf File";
+            // 
+            // tbMappingConf
+            // 
+            this.tbMappingConf.Font = new System.Drawing.Font("Consolas", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.tbMappingConf.Location = new System.Drawing.Point(195, 136);
+            this.tbMappingConf.Margin = new System.Windows.Forms.Padding(4);
+            this.tbMappingConf.Name = "tbMappingConf";
+            this.tbMappingConf.ReadOnly = true;
+            this.tbMappingConf.Size = new System.Drawing.Size(727, 24);
+            this.tbMappingConf.TabIndex = 7;
+            this.tbMappingConf.Click += new System.EventHandler(this.tbMappingConf_Click);
             // 
             // Inspector
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 14F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1060, 581);
+            this.Controls.Add(this.tbMappingConf);
+            this.Controls.Add(this.label3);
             this.Controls.Add(this.logArea);
             this.Controls.Add(this.tbOutput);
             this.Controls.Add(this.label2);
@@ -115,6 +142,7 @@
             this.Controls.Add(this.label1);
             this.Font = new System.Drawing.Font("SimSun", 10.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Margin = new System.Windows.Forms.Padding(4);
             this.Name = "Inspector";
             this.Text = "Inspector";
@@ -131,6 +159,8 @@
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.TextBox tbOutput;
         private System.Windows.Forms.TextBox logArea;
+        private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.TextBox tbMappingConf;
     }
 }
 

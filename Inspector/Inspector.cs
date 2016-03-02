@@ -18,6 +18,7 @@ namespace Inspector
     {
         private string input;
         private string output;
+        private string mappingConfFile;
 
         public Inspector()
         {
@@ -36,10 +37,16 @@ namespace Inspector
             this.tbOutput.Text = ShowFileSelectorDialog();
         }
 
+        private void tbMappingConf_Click(object sender, EventArgs e)
+        {
+            this.tbMappingConf.Text = ShowOneFileSelectorDialog();
+        }
+
         private void btnStart_Click(object sender, EventArgs e)
         {
             this.input = this.tbInput.Text;
             this.output = this.tbOutput.Text;
+            this.mappingConfFile = this.tbMappingConf.Text;
 
             if (input == string.Empty || output == string.Empty)
             {
@@ -51,8 +58,6 @@ namespace Inspector
 
             Thread thread = new Thread(new ThreadStart(doCheck));
             thread.Start();
-
-            this.btnStart.Enabled = true;
         }
 
         public void doCheck()
@@ -65,7 +70,7 @@ namespace Inspector
 
             for (int i = 0; i < files.Length; i++)
             {
-                Checker checker = new Checker(files[i], writer);
+                Checker checker = new Checker(files[i], writer, this.mappingConfFile);
                 string log = checker.Process();
 
                 this.Invoke((MethodInvoker)delegate
@@ -79,6 +84,7 @@ namespace Inspector
             this.Invoke((MethodInvoker)delegate
             {
                 this.btnStart.Enabled = true; // runs on UI thread
+                MessageBox.Show("Done!", "Inspector");
             });
         }
 
@@ -96,6 +102,21 @@ namespace Inspector
             }
 
             return foldername;
+        }
+
+        private string ShowOneFileSelectorDialog()
+        {
+            string filename = string.Empty;
+
+            var dialog = new OpenFileDialog();
+            dialog.Filter = "TXT files|*.txt";
+            DialogResult result = dialog.ShowDialog();
+            if (result == DialogResult.OK)
+            {
+                filename = dialog.FileName;
+            }
+
+            return filename;
         }
 
         private string[] GetAllFilesRecursively(string path)

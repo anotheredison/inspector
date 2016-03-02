@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-
 using Word = Microsoft.Office.Interop.Word;
 
 namespace Inspector
@@ -27,12 +28,19 @@ namespace Inspector
         private string fileName;
         private StringBuilder log;
         private ExcelWriter writer;
+        private Dictionary<string, string> mapping;
 
-        public Checker(string fileName, ExcelWriter writer)
+        private static char[] punctuations_quanjiao = { '。', '、', '“', '”', '？', '！', '，', '；', '：' };
+        private static char[] punctuations_banjiao = { ',', '?', '!', ';', '"', ':' };
+        private static char[] punctuations_end_quanjiao = { '）' };
+        private static char[] punctuations_end_banjiao = { ')' };
+        
+        public Checker(string fileName, ExcelWriter writer, string mappingConfFilePath)
         {
             this.fileName = fileName;
             this.writer = writer;
             this.log = new StringBuilder();
+            this.mapping = LoadMappingConf(mappingConfFilePath);
         }
 
         public string Process()
@@ -84,6 +92,29 @@ namespace Inspector
             return log.ToString();
         }
 
+        private Dictionary<string, string> LoadMappingConf(string mappingConfFilePath)
+        {
+            Dictionary<string, string> mapping = new Dictionary<string, string>();
+
+            if (File.Exists(mappingConfFilePath))
+            {
+                using (var reader = new StreamReader(mappingConfFilePath, System.Text.Encoding.UTF8))
+                {
+                    string line;
+                    while ((line = reader.ReadLine()) != null)
+                    {
+                        var segs = line.Split('\t');
+                        if(segs.Length == 2)
+                        {
+                            mapping.Add(segs[0], segs[1]);            
+                        }
+                    }
+                }
+            }
+
+            return mapping;
+        }
+
         private void CheckFirstTable(Word.Table table)
         {
             string chinese = table.Cell(2, 2).Range.Text.ToString();
@@ -100,8 +131,34 @@ namespace Inspector
                 string japanese = table.Cell(i, 3).Range.Text.ToString().TrimEnd(new char[] { '\r', '\a' });
 
                 CheckLine(chinese, japanese);
+                //CheckMapping(chinese, japanese);
             }
         }
+
+        //private void CheckMapping(string chinese, string japanese)
+        //{
+        //    var sb = new StringBuilder();
+
+        //    this.mapping.Select(m =>
+        //        {
+        //            int chineseCount = Regex.Matches(chinese, m.Key).Count;
+        //            int japaneseCount = Regex.Matches(japanese, m.Value).Count;
+
+        //            return new Tuple<string, string, int, int>(m.Key, m.Value, chineseCount, japaneseCount);
+        //        })
+        //        .Where(p => p.Item3 != p.Item4 && p.Item3 > 0)
+        //        .ToList()
+        //        .ForEach(d =>
+        //        {
+        //            sb.AppendFormat("{0} => {1} {2}(中) {3} {4}(日) 不一致\n", d.Item1, d.Item2, d.Item3, d.Item3 > d.Item4 ? '>' : '<', d.Item4);
+        //        });
+            
+        //    if (sb.Length > 0)
+        //    {
+        //        writer.WriteLine(new string[] { chinese, japanese, sb.ToString(), fileName });
+        //    }
+
+        //}
 
         private void CheckLine(string chinese, string japanese)
         {
@@ -119,6 +176,20 @@ namespace Inspector
             {
                 sb.AppendFormat("{0} (日)不是全角\n", IsWhiteSpaceAll(r) ? "空格" : r);
             }
+
+            this.mapping.Select(m =>
+                {
+                    int chineseCount = Regex.Matches(chinese, m.Key).Count;
+                    int japaneseCount = Regex.Matches(japanese, m.Value).Count;
+
+                    return new Tuple<string, string, int, int>(m.Key, m.Value, chineseCount, japaneseCount);
+                })
+                .Where(p => p.Item3 != p.Item4 && p.Item3 > 0)
+                .ToList()
+                .ForEach(d =>
+                {
+                    sb.AppendFormat("{0} => {1} {2}(中) {3} {4}(日) 不一致\n", d.Item1, d.Item2, d.Item3, d.Item3 > d.Item4 ? '>' : '<', d.Item4);
+                });
 
             if (sb.Length > 0)
             {
@@ -141,13 +212,24 @@ namespace Inspector
                 {
                     continue;
                 }
+                else if (IsPunctuation(text[i]))
+                {
+                    result.Add(text[i].ToString());
+                }
+                else if (IsWhiteSpaceAll(text[i]))
+                {
+                    result.Add(text[i].ToString());
+                }
                 else
                 {
                     int end = i;
-                    while (end < text.Length && !IsChinese(text[end]) && !IsJapanese(text[end]))
+                    while (end < text.Length && !IsPhaseEnd(text[end]) && !IsWhiteSpaceAll(text[end]) && !IsPunctuation(text[end]) && !IsChinese(text[end]) && !IsJapanese(text[end]))
                     {
                         end++;
                     }
+                    
+                    if (IsPhaseEnd(text[end])) ++end;
+
                     result.Add(text.Substring(i, end - i));
                     i = end - 1;
                 }
@@ -231,6 +313,18 @@ namespace Inspector
             return (c >= 0x3040 && c <= 0x309F) || (c >= 0x30A0 && c <= 0x30FF);
         }
 
+        private bool IsPunctuation(char c)
+        {
+            if(IsBanjiao(c))
+            {
+                return punctuations_banjiao.Any(p => p == c);
+            }
+            else
+            {
+                return punctuations_quanjiao.Any(p => p == c);
+            }
+        }
+
         private bool IsDigitAll(char c)
         {
             if(c >= '0' && c <= '9')
@@ -238,6 +332,18 @@ namespace Inspector
             
             c = ToBanjiao(c);
             return (c >= '0' && c <= '9');
+        }
+
+        private bool IsPhaseEnd(char c)
+        {
+            if (IsBanjiao(c))
+            {
+                return punctuations_end_banjiao.Any(p => p == c);
+            }
+            else
+            {
+                return punctuations_end_quanjiao.Any(p => p == c);
+            }
         }
 
         private bool IsQuanjiaoEqual(string cc, string jc)
@@ -257,6 +363,11 @@ namespace Inspector
             }
 
             return ret;
+        }
+
+        private bool IsBanjiao(char c)
+        {
+            return c < 127;
         }
 
         private bool IsWhiteSpaceAll(string s)
@@ -300,6 +411,27 @@ namespace Inspector
             }
 
             return r.ToString();
+        }
+
+        // 半角转全角
+        private char ToQuanjiao(char c)
+        {
+            char ret;
+            // 空格单独处理
+            if (c == 32)
+            {
+                ret = ((char)12288);
+            }
+            else if (c < 127)
+            {
+                ret = ((char)(c + 65248));
+            }
+            else
+            {
+                ret = c;
+            }
+
+            return ret;
         }
 
         // 全角转半角
